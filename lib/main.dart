@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
+//stopped at 30 min
 void main() {
   runApp(MyApp());
 }
@@ -86,7 +87,7 @@ class _HomePageState extends State<HomePage> {
 }
 
 class SpringySlider extends StatefulWidget {
-  final int markCount;
+  final double markCount;
   final Color positiveColor;
   final Color negativeColor;
 
@@ -99,6 +100,9 @@ class SpringySlider extends StatefulWidget {
 }
 
 class _SpringySliderState extends State<SpringySlider> {
+  final double paddingTop = 50;
+  final double paddingBottom = 50;
+  final sliderPercent = .85;
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -106,8 +110,8 @@ class _SpringySliderState extends State<SpringySlider> {
         SliderMark(
           markCount: widget.markCount,
           color: widget.positiveColor,
-          paddingTop: 50,
-          paddingBottom: 50,
+          paddingTop: paddingTop,
+          paddingBottom: paddingBottom,
         ),
         ClipPath(
           clipper: SliderClipper(),
@@ -124,6 +128,46 @@ class _SpringySliderState extends State<SpringySlider> {
               ),
             ],
           ),
+        ),
+        Padding(
+          padding: EdgeInsets.only(
+            top: paddingTop,
+            bottom: paddingBottom,
+          ),
+          child: LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) {
+              final height = constraints.maxHeight;
+
+              final sliderY = height * (1 - sliderPercent);
+              final pointsYouNeed = (100 * (1 - sliderPercent)).round();
+              final pointsYouHave = 100 - pointsYouNeed; 
+
+              return Stack(
+                children: <Widget>[
+                  Positioned(
+                      left: 30,
+                      top: sliderY - 50,
+                      child: FractionalTranslation(
+                          translation: Offset(0, -1),
+                          child: Points(
+                            points: pointsYouNeed,
+                            color: Theme.of(context).primaryColor,
+                            isAboveSlider: true,
+                            isPointYouNeed: true,
+                          ))),
+                  Positioned(
+                      left: 30,
+                      top: sliderY + 50,
+                      child: new Points(
+                        points: pointsYouHave,
+                        color: Theme.of(context).scaffoldBackgroundColor,
+                        isAboveSlider: false,
+                        isPointYouNeed: false,
+                      ))
+                ],
+              );
+            },
+          ),
         )
       ],
     );
@@ -131,10 +175,10 @@ class _SpringySliderState extends State<SpringySlider> {
 }
 
 class SliderMark extends StatelessWidget {
-  final markCount;
+  final double markCount;
   final Color color;
-  final paddingTop;
-  final paddingBottom;
+  final double paddingTop;
+  final double paddingBottom;
 
   const SliderMark(
       {Key key,
@@ -151,7 +195,7 @@ class SliderMark extends StatelessWidget {
           color: color,
           markThickness: 2,
           markCount: markCount,
-          padingRight: 20,
+          paddingRight: 20,
           paddingBottom: paddingBottom),
       child: Container(),
     );
@@ -161,17 +205,17 @@ class SliderMark extends StatelessWidget {
 class SliderMarkPainter extends CustomPainter {
   final double largeMarkWidth = 30;
   final double smallMarkWidth = 10;
-  final int markCount;
+  final double markCount;
   final Color color;
-  final padingRight;
-  final paddingTop;
-  final paddingBottom;
-  final markPaint;
-  final markThickness;
+  final double paddingRight;
+  final double paddingTop;
+  final double paddingBottom;
+  final Paint markPaint;
+  final double markThickness;
 
   SliderMarkPainter(
       {this.markCount,
-      this.padingRight,
+      this.paddingRight,
       this.color,
       this.paddingTop,
       this.paddingBottom,
@@ -196,8 +240,8 @@ class SliderMarkPainter extends CustomPainter {
       }
       final markY = i * gap + paddingTop;
 
-      canvas.drawLine(Offset(size.width - padingRight - markWidth, markY),
-          Offset(size.width - padingRight, markY), markPaint);
+      canvas.drawLine(Offset(size.width - paddingRight - markWidth, markY),
+          Offset(size.width - paddingRight, markY), markPaint);
     }
   }
 
@@ -213,13 +257,70 @@ class SliderClipper extends CustomClipper<Path> {
   Path getClip(Size size) {
     Path rect = Path();
     rect.addRect(
-      Rect.fromLTWH(0, size.height/2, size.width, size.height/2)
-    );
+        Rect.fromLTWH(0, size.height / 2, size.width, size.height / 2));
+    return rect;
   }
 
   @override
   bool shouldReclip(CustomClipper<Path> oldClipper) {
-    // TODO: implement shouldReclip
-    throw true;
+    return true;
+  }
+}
+
+class Points extends StatelessWidget {
+  final int points;
+  final bool isAboveSlider;
+  final bool isPointYouNeed;
+  final Color color;
+
+  const Points(
+      {Key key,
+      this.points,
+      this.isAboveSlider = true,
+      this.isPointYouNeed = true,
+      this.color})
+      : super(key: key);
+  @override
+  Widget build(BuildContext context) {
+    final percent = points / 100;
+    final pointTextSize = 30 + (70 * percent);
+    return Row(
+      crossAxisAlignment: isAboveSlider ? CrossAxisAlignment.end  : CrossAxisAlignment.start,
+      children: <Widget>[
+        FractionalTranslation(
+           translation: Offset(
+             0,
+             isAboveSlider ? 0.18 : -0.18
+           ),
+                  child: Text(
+            "$points",
+            style: TextStyle(fontSize: pointTextSize,color: color),
+          ),
+        ),
+        Padding(
+          padding: EdgeInsets.only(left: 8),
+          child: Padding(
+            padding: const EdgeInsets.only(left: 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Padding(
+                  padding: EdgeInsets.only(bottom: 4),
+                  child: Text(
+                    "POINTS",
+                    style: TextStyle(fontWeight: FontWeight.bold, color: color),
+                  ),
+                ),
+                Text(
+                  isPointYouNeed ? "YOU NEED" : "YOU HAVE",
+                  style: TextStyle(fontWeight: FontWeight.bold, color: color),
+                )
+              ],
+            ),
+          ),
+        )
+      ],
+    );
   }
 }
